@@ -1,9 +1,11 @@
-﻿using OpenQA.Selenium;
+﻿using AngleSharp.Dom;
+using AngleSharp.Dom.Html;
+using AngleSharp.Parser.Html;
+using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace SelTest
@@ -26,46 +28,59 @@ namespace SelTest
 
             public void Start()
             {
-                ChromeOptions options = new ChromeOptions();
+                var options = new ChromeOptions();
                 //options.AddArguments("--headless");
                 _browser = new ChromeDriver(options);
                 var url = @"https://www.marathonbet.com/su/live/26418";
                 _browser.Navigate().GoToUrl(url);
 
-                //WebDriverWait wait = new WebDriverWait(_browser, TimeSpan.FromSeconds(5));
-                //wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.TagName("tbody")));
+                var content = _browser.FindElement(By.CssSelector(".sport-category-content"));
+                var contentHTML = content.GetAttribute("innerHTML");
 
-                var tables = _browser.FindElements(By.CssSelector("table.foot-market"));
-                var table = tables.First(); //table
+                var parser = new HtmlParser();
+                var document = parser.Parse(contentHTML);
 
-                var tBodys = table.FindElements(By.CssSelector("tbody")).Take(2).ToArray();
-                var titleTBody = tBodys.First();
-                var infoTBody = tBodys.Skip(1).First();
+                EventFromDocument(document);
 
-                var title = infoTBody.GetAttribute("data-event-name");
-                var eventId = infoTBody.GetAttribute("data-event-treeid");
-
-                //var allTds = infoTBody.FindElements(By.CssSelector("tbody>tr:first-of-type>td"));
-                var allTds = infoTBody.FindElement(By.CssSelector("tbody>tr:first-of-type"));
-                var deb = allTds.GetAttribute("innerHTML");
-
-                //var tdsList = new List<string>();
-                //foreach (var td in allTds)
-                //{
-                //    tdsList.Add(td.GetAttribute("innerHTML"));
-                //}
-
-                //var sportEvent = GetEvent(allTds);
-                //sportEvent.Title = title;
-
-                //Console.WriteLine(sportEvent);
+                Console.WriteLine("Press any key to exit");
+                Console.ReadKey();
 
                 _browser.Quit();
             }
 
-            private SportEvent GetEvent(ReadOnlyCollection<IWebElement> allTds)
+            private void EventFromDocument(IHtmlDocument document)
             {
-                var sportEvent = new SportEvent();
+                var categoryContainers = document.QuerySelectorAll(".category-container");
+                Console.WriteLine("Category containers = " + categoryContainers.Length);
+                foreach (var categoryContainer in categoryContainers)
+                {
+                    Console.WriteLine("---");
+                    var categoryContent = categoryContainer.QuerySelector("div.category-content");
+
+                    var tBodys = categoryContent.QuerySelectorAll("div>table.foot-market>tbody");
+                    var tBodyContents = tBodys.Skip(1).ToArray();
+
+                    foreach (var tBodyContent in tBodyContents)
+                    {
+                        var eventTitle = tBodyContent.GetAttribute("data-event-name");
+                        var eventId = tBodyContent.GetAttribute("data-event-treeid");
+
+                        var tr = tBodyContent.QuerySelectorAll("tr").First();
+                        var tds = tr.Children.ToArray();
+
+                        var sportEvent = GetEvent(tds, eventTitle, eventId);
+                        Console.WriteLine(sportEvent);
+                    }
+                }
+            }
+
+            private SportEvent GetEvent(IEnumerable<IElement> allTds, string eventTitle, string eventId)
+            {
+                var sportEvent = new SportEvent()
+                {
+                    Title = eventTitle,
+                    Id = eventId
+                };
 
                 sportEvent.Win1 = GetText(allTds, 2);
                 sportEvent.Draw = GetText(allTds, 3);
@@ -74,26 +89,72 @@ namespace SelTest
                 sportEvent.Win1OrWin2 = GetText(allTds, 6);
                 sportEvent.Win2OrDraw = GetText(allTds, 7);
 
-                var foraText1 = allTds.Skip(8).First().Text;
-                sportEvent.ForaText1 = FloatHelper.ParseToNullable(foraText1);
-
+                sportEvent.ForaText1 = GetForaText(allTds, 8);
                 sportEvent.ForaTeam1 = GetText(allTds, 8);
 
-                var foraText2 = allTds.Skip(8).First().Text;
-                sportEvent.ForaText2 = FloatHelper.ParseToNullable(foraText2);
-
+                sportEvent.ForaText2 = GetForaText(allTds, 9);
                 sportEvent.ForaTeam2 = GetText(allTds, 9);
+
+                sportEvent.TotalLessText = GetToalText(allTds, 10);
                 sportEvent.TotalLess = GetText(allTds, 10);
+
+                sportEvent.TotalMoreText = GetToalText(allTds, 11);
                 sportEvent.TotalMore = GetText(allTds, 11);
 
                 return sportEvent;
             }
 
-            float? GetText(IEnumerable<IWebElement> allTds, int skip)
+            float? GetToalText(IEnumerable<IElement> allTds, int skip)
+            {
+                var rawTotalLessText = allTds.Skip(skip).First().TextContent;
+                if (rawTotalLessText.Contains("—"))
+                {
+                    return null;
+                }
+
+                var startIndex = rawTotalLessText.IndexOf('(');
+                if (startIndex == -1)
+                {
+                    throw new Exception("startIndex = -1; skip = " + skip);
+                }
+                startIndex += 1;
+
+                var stopIndex = rawTotalLessText.IndexOf(')');
+                if (stopIndex == -1)
+                {
+                    throw new Exception("stopIndex = -1; skip = " + skip);
+                }
+
+                var totalLessText = rawTotalLessText.Substring(startIndex, stopIndex - startIndex);
+                return FloatHelper.ParseToNullable(totalLessText);
+            }
+
+            float? GetForaText(IEnumerable<IElement> allTds, int skip)
+            {
+                var foraRawText = allTds.Skip(skip).First().TextContent;
+                if (foraRawText.Contains("—")) //т.е. ставки нет
+                {
+                    return null;
+                }
+
+                var startIndex = foraRawText.IndexOf('(');
+                if (startIndex == -1)
+                {
+                    //log
+                    throw new Exception("startIndex = -1; skip = " + skip);
+                }
+                startIndex += 1;
+                var endIndex = foraRawText.IndexOf(')');
+                //не отображает минус в дебаге
+                var foraText = foraRawText.Substring(startIndex, endIndex - startIndex);
+                return FloatHelper.ParseToNullable(foraText);
+            }
+
+            float? GetText(IEnumerable<IElement> allTds, int skip)
             {
                 var td = allTds.Skip(skip).First();
-                var span = td.FindElement(By.TagName("span"));
-                return FloatHelper.ParseToNullable(span.Text);
+                var span = td.QuerySelector("span");
+                return FloatHelper.ParseToNullable(span.TextContent);
             }
         }
 
@@ -182,10 +243,11 @@ namespace SelTest
                 result.ForaTeam2 = FloatHelper.ParseToNullable(foraTeam2.Text);
 
                 var total = tds.Skip(12).First();
-                result.Total = FloatHelper.ParseToNullable(total.Text);
+                result.TotalMoreText = FloatHelper.ParseToNullable(total.Text);
+                result.TotalLessText = FloatHelper.ParseToNullable(total.Text);
 
                 var totalMore = tds.Skip(13).First();
-                result.Total = FloatHelper.ParseToNullable(totalMore.Text);
+                result.TotalMore = FloatHelper.ParseToNullable(totalMore.Text);
 
                 var totalLess = tds.Skip(14).First();
                 result.TotalLess = FloatHelper.ParseToNullable(totalLess.Text);
@@ -194,56 +256,5 @@ namespace SelTest
             }
         }
 
-    }
-
-
-
-    //добавить неактивность коэффициентов
-    class SportEvent
-    {
-        public string Title { get; set; }
-
-        public float? Win1 { get; set; }
-
-        public float? Draw { get; set; } //ничья
-
-        public float? Win2 { get; set; }
-
-        public float? Win1OrDraw { get; set; }
-
-        public float? Win1OrWin2 { get; set; }
-
-        public float? Win2OrDraw { get; set; }
-
-        public float? ForaText1 { get; set; }
-
-        public float? ForaTeam1 { get; set; }
-
-        public float? ForaText2 { get; set; }
-
-        public float? ForaTeam2 { get; set; }
-
-        public float? Total { get; set; }
-
-        public float? TotalMore { get; set; }
-
-        public float? TotalLess { get; set; }
-
-        public override string ToString()
-        {
-            return $"{Title} {Environment.NewLine} {Win1} {Draw} {Win2} {Win1OrDraw} {Win1OrWin2} {Win2OrDraw} {ForaText1} {ForaTeam1} {ForaText2} {ForaTeam2} {Total} {TotalMore} {TotalLess}";
-        }
-    }
-
-    public static class FloatHelper
-    {
-        public static float? ParseToNullable(string s)
-        {
-            float fRes;
-            if (!float.TryParse(s, out fRes))
-                return null;
-
-            return fRes;
-        }
     }
 }
