@@ -69,6 +69,13 @@ namespace SelTest
                         var tds = tr.Children.ToArray();
 
                         var sportEvent = GetEvent(tds, eventTitle, eventId);
+
+                        var teams = sportEvent.Title.Split(new string[] { " - " }, StringSplitOptions.RemoveEmptyEntries);
+                        if (teams.Length != 2)
+                        {
+                            throw new Exception("teams.Length = " + teams.Length + " INFO:" + sportEvent.ToString());
+                        }
+                        EventAggregatorContainer.Instance.AddEvent(teams[0], teams[1], sportEvent);
                         Console.WriteLine(sportEvent);
                     }
                 }
@@ -164,7 +171,7 @@ namespace SelTest
 
             public void Start()
             {
-                ChromeOptions options = new ChromeOptions();
+                var options = new ChromeOptions();
                 options.AddArguments("--headless");
                 _browser = new ChromeDriver(options);
                 var url = @"https://www.fonbet.ru/#!/live/football";

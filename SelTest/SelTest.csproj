@@ -57,9 +57,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BookMaker.cs" />
+    <Compile Include="EventAggregator.cs" />
+    <Compile Include="EventAggregatorContainer.cs" />
     <Compile Include="FloatHelper.cs" />
+    <Compile Include="Fork.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Sport.cs" />
     <Compile Include="SportEvent.cs" />
   </ItemGroup>
   <ItemGroup>
