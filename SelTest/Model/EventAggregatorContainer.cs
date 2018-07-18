@@ -29,7 +29,7 @@ namespace SelTest.Model
             EventAggregators = new List<EventAggregator>();
         }
 
-        internal EventAggregator Search(string team1, string team2)
+        internal EventAggregator SearchAggregator(string team1, string team2)
         {
             var result = EventAggregators
                 .Where(u => (u.Team1 == team1 && u.Team2 == team2) || (u.Team1 == team2 && u.Team2 == team1)).ToArray();
@@ -42,13 +42,15 @@ namespace SelTest.Model
 
         internal void AddEvent(string team1, string team2, SportEvent sportEvent)
         {
-            var aggregator = Search(team1, team2);
+            var aggregator = SearchAggregator(team1, team2);
             if (aggregator != null)
             {
                 var existsEvent = aggregator.SportEvents
                     .RemoveAll(u => u.Id == sportEvent.Id && u.BookMaker == sportEvent.BookMaker);
 
                 aggregator.SportEvents.Add(sportEvent);
+
+                return;
             }
 
             var newEventAggregator = new EventAggregator

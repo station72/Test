@@ -1,6 +1,6 @@
-﻿using SelTest.Model;
-using SelTest.Workers;
-
+﻿using SelTest.Workers;
+using System;
+using System.Threading.Tasks;
 
 namespace SelTest
 {
@@ -9,14 +9,23 @@ namespace SelTest
         //TODO: установить русский язык (добавить возможность выбора)
         static void Main(string[] args)
         {
+            MainAsync(args).GetAwaiter().GetResult();
+
+        }
+
+        static async Task MainAsync(string[] args)
+        {
             var fonbet = new FonBetWorker();
-            fonbet.Start();
+            await fonbet.Start();
 
             //var marathon = new MarathonWorker();
             //marathon.Start();
 
-            var agr = EventAggregatorContainer.Instance.EventAggregators;
-        }
+            ////TODO: make thread safe
+            //var agr = EventAggregatorContainer.Instance.EventAggregators;
 
+            Console.WriteLine("Press any key to close app");
+            Console.ReadKey();
+        }
     }
 }

@@ -8,18 +8,28 @@ using SelTest.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SelTest.Workers
 {
     class FonBetWorker
     {
         private IWebDriver _browser;
-
-        public void Start()
+        private CancellationTokenSource _cts;
+        private TimeSpan _interval;
+        public FonBetWorker()
         {
             var options = new ChromeOptions();
             //options.AddArguments("--headless");
             _browser = new ChromeDriver(options);
+
+            _cts = new CancellationTokenSource();
+            _interval = TimeSpan.FromSeconds(5);
+        }
+
+        public async Task Start()
+        {
             var url = @"https://www.fonbet.ru/#!/live/football";
             _browser.Navigate().GoToUrl(url);
 
@@ -27,42 +37,87 @@ namespace SelTest.Workers
             //поменял namespace
             wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.TagName("tbody")));
 
+            try
+            {
+                await Task.Factory.StartNew(async() =>
+                {
+                    await RefreshStarter();
+                });
+            }
+            catch (Exception ex)
+            {
+                _browser.Quit();
+            }
+        }
+
+        async Task RefreshStarter()
+        {
+            while (true)
+            {
+                //_cts.Token.ThrowIfCancellationRequested();
+                Console.WriteLine("WHILE");
+                var startTime = DateTimeOffset.UtcNow;
+                Refresh();
+                var deltaTime = DateTimeOffset.UtcNow - startTime;
+
+                //if (deltaTime < _interval)
+                //{
+                //    var delay = _interval - deltaTime;
+                //    await Task.Delay(delay.Milliseconds);
+                //}
+            }
+        }
+
+        void Refresh()
+        {
+            Console.WriteLine("Iteration START");
+
             var table = _browser.FindElement(By.CssSelector("table.table"));
             var tableHtml = "<table class=\"table\">" + table.GetAttribute("innerHTML") + "</table>";
 
             var parser = new HtmlParser();
-            var document = parser.Parse(tableHtml);
-
-            var tBodys = document.QuerySelectorAll("table.table>tbody.table__body");
-            foreach (var tBody in tBodys)
+            using (var document = parser.Parse(tableHtml))
             {
-                Console.WriteLine("---");
-                var rows = tBody.QuerySelectorAll("tr.table__row"); //line
-
-                foreach (var row in rows.Skip(1)) //skip header
+                var tBodys = document.QuerySelectorAll("table.table>tbody.table__body");
+                foreach (var tBody in tBodys)
                 {
-                    var skipElement = row.QuerySelector("td>div._is_child ");
-                    if (skipElement != null)
-                    {
-                        continue;
-                    }
+                    _cts.Token.ThrowIfCancellationRequested();
 
-                    var tds = row.Children;
-                    var sportEvent = EventGetter(tds);
-                    var teams = sportEvent.Title.Split(new string[] { " — " }, StringSplitOptions.RemoveEmptyEntries);
-                    if (teams.Length != 2)
+                    Console.WriteLine("---");
+                    var rows = tBody.QuerySelectorAll("tr.table__row"); //line
+
+                    foreach (var row in rows.Skip(1)) //skip header
                     {
-                        throw new Exception("team.Length = " + teams.Length);
+                        var skipElement = row.QuerySelector("td>div._is_child ");
+                        if (skipElement != null)
+                        {
+                            continue;
+                        }
+
+                        var tds = row.Children;
+                        var sportEvent = EventGetter(tds);
+                        var teams = sportEvent.Title.Split(new string[] { " — " }, StringSplitOptions.RemoveEmptyEntries);
+                        if (teams.Length != 2)
+                        {
+                            throw new Exception("team.Length = " + teams.Length);
+                        }
+
+                        _cts.Token.ThrowIfCancellationRequested();
+
+                        try
+                        {
+                            EventAggregatorContainer.Instance.AddEvent(teams[0], teams[1], sportEvent);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw;
+                        }
+                        Console.WriteLine(sportEvent);
                     }
-                    EventAggregatorContainer.Instance.AddEvent(teams[0], teams[1], sportEvent);
-                    Console.WriteLine(sportEvent);
                 }
+                Console.WriteLine("Iteration END");
             }
-            Console.WriteLine("Press any key to close");
-            Console.ReadKey();
-            _browser.Quit();
         }
-
 
         float? GetValue(IEnumerable<IElement> tds, int skip)
         {
