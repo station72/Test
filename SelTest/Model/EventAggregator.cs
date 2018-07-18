@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace SelTest
+namespace SelTest.Model
 {
     class EventAggregator
     {

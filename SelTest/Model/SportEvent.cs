@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SelTest
+namespace SelTest.Model
 {
     //добавить неактивность коэффициентов
     class SportEvent

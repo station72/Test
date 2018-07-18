@@ -1,4 +1,4 @@
-﻿namespace SelTest
+﻿namespace SelTest.Model
 {
     enum Sport
     {

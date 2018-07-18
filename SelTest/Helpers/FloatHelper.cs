@@ -1,4 +1,4 @@
-﻿namespace SelTest
+﻿namespace SelTest.Helpers
 {
     public static class FloatHelper
     {

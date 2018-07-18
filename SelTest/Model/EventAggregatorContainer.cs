@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SelTest
+namespace SelTest.Model
 {
     class EventAggregatorContainer
     {
@@ -58,6 +58,7 @@ namespace SelTest
                 Team2 = team2
             };
 
+            newEventAggregator.SportEvents.Add(sportEvent);
             EventAggregators.Add(newEventAggregator);
         }
     }
