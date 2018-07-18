@@ -61,6 +61,7 @@
     <Compile Include="Model\EventAggregator.cs" />
     <Compile Include="Model\EventAggregatorContainer.cs" />
     <Compile Include="Helpers\FloatHelper.cs" />
+    <Compile Include="Model\RecognizedSportEvent.cs" />
     <Compile Include="Workers\FonBetWorker.cs" />
     <Compile Include="Model\Fork.cs" />
     <Compile Include="Program.cs" />

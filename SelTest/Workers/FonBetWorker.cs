@@ -52,23 +52,33 @@ namespace SelTest.Workers
 
         async Task RefreshStarter()
         {
+
             while (true)
             {
                 //_cts.Token.ThrowIfCancellationRequested();
                 Console.WriteLine("WHILE");
                 var startTime = DateTimeOffset.UtcNow;
-                Refresh();
+                try
+                {
+                    var events = GetEvents();
+                    EventAggregatorContainer.Instance.AddEvents(events);
+                }
+                catch (Exception ex)
+                {
+                    
+                }
+                
                 var deltaTime = DateTimeOffset.UtcNow - startTime;
 
-                //if (deltaTime < _interval)
-                //{
-                //    var delay = _interval - deltaTime;
-                //    await Task.Delay(delay.Milliseconds);
-                //}
+                if (deltaTime < _interval)
+                {
+                    var delay = _interval - deltaTime;
+                    await Task.Delay(delay.Milliseconds);
+                }
             }
         }
 
-        void Refresh()
+        private IEnumerable<RecognizedSportEvent> GetEvents()
         {
             Console.WriteLine("Iteration START");
 
@@ -76,6 +86,7 @@ namespace SelTest.Workers
             var tableHtml = "<table class=\"table\">" + table.GetAttribute("innerHTML") + "</table>";
 
             var parser = new HtmlParser();
+            var recSportEvents = new List<RecognizedSportEvent>();
             using (var document = parser.Parse(tableHtml))
             {
                 var tBodys = document.QuerySelectorAll("table.table>tbody.table__body");
@@ -102,21 +113,21 @@ namespace SelTest.Workers
                             throw new Exception("team.Length = " + teams.Length);
                         }
 
-                        _cts.Token.ThrowIfCancellationRequested();
+                        recSportEvents.Add(new RecognizedSportEvent
+                        {
+                            Team1 = teams[0],
+                            Team2 = teams[1],
+                            SportEvent = sportEvent
+                        });
 
-                        try
-                        {
-                            EventAggregatorContainer.Instance.AddEvent(teams[0], teams[1], sportEvent);
-                        }
-                        catch (Exception ex)
-                        {
-                            throw;
-                        }
+                        _cts.Token.ThrowIfCancellationRequested();
                         Console.WriteLine(sportEvent);
                     }
                 }
                 Console.WriteLine("Iteration END");
             }
+
+            return recSportEvents;
         }
 
         float? GetValue(IEnumerable<IElement> tds, int skip)

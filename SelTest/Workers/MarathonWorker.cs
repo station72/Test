@@ -8,41 +8,86 @@ using SelTest.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SelTest.Workers
 {
     internal class MarathonWorker
     {
         private IWebDriver _browser;
+        private readonly TimeSpan _interval;
+        private CancellationTokenSource _cts;
 
-        public void Start()
+        public MarathonWorker()
         {
             var options = new ChromeOptions();
             //options.AddArguments("--headless");
             _browser = new ChromeDriver(options);
+
+            _interval = TimeSpan.FromSeconds(5);
+            _cts = new CancellationTokenSource();
+        }
+
+        public async Task Start()
+        {
             var url = @"https://www.marathonbet.com/su/live/26418";
             _browser.Navigate().GoToUrl(url);
 
+            try
+            {
+                await Task.Factory.StartNew(async () =>
+                {
+                    await RefreshStarter();
+                });
+            }
+            catch (Exception ex)
+            {
+                _browser.Quit();
+            }
+        }
+
+        async Task RefreshStarter()
+        {
+            while (true)
+            {
+                _cts.Token.ThrowIfCancellationRequested();
+                Console.WriteLine("WHILE");
+                var startTime = DateTimeOffset.UtcNow;
+                try
+                {
+                    var events = GetEvents();
+                    EventAggregatorContainer.Instance.AddEvents(events);
+                }
+                catch (Exception ex)
+                {
+
+                }
+
+                var deltaTime = DateTimeOffset.UtcNow - startTime;
+
+                if (deltaTime < _interval)
+                {
+                    var delay = _interval - deltaTime;
+                    await Task.Delay(delay.Milliseconds);
+                }
+            }
+        }
+
+        private IEnumerable<RecognizedSportEvent> GetEvents()
+        {
             var content = _browser.FindElement(By.CssSelector(".sport-category-content"));
             var contentHTML = content.GetAttribute("innerHTML");
 
             var parser = new HtmlParser();
             var document = parser.Parse(contentHTML);
 
-            EventFromDocument(document);
-
-            Console.WriteLine("Press any key to exit");
-            Console.ReadKey();
-
-            _browser.Quit();
-        }
-
-        private void EventFromDocument(IHtmlDocument document)
-        {
             var categoryContainers = document.QuerySelectorAll(".category-container");
-            Console.WriteLine("Category containers = " + categoryContainers.Length);
+            var recEvents = new List<RecognizedSportEvent>();
             foreach (var categoryContainer in categoryContainers)
             {
+                _cts.Token.ThrowIfCancellationRequested();
+
                 Console.WriteLine("---");
                 var categoryContent = categoryContainer.QuerySelector("div.category-content");
 
@@ -51,12 +96,15 @@ namespace SelTest.Workers
 
                 foreach (var tBodyContent in tBodyContents)
                 {
-                    ParseTBodyContent(tBodyContent);
+                    var recEvent = GetEvent(tBodyContent);
+                    recEvents.Add(recEvent);
                 }
             }
+
+            return recEvents;
         }
 
-        private void ParseTBodyContent(IElement tBodyContent)
+        private RecognizedSportEvent GetEvent(IElement tBodyContent)
         {
             var eventTitle = tBodyContent.GetAttribute("data-event-name");
             var eventId = tBodyContent.GetAttribute("data-event-treeid");
@@ -71,8 +119,15 @@ namespace SelTest.Workers
             {
                 throw new Exception("teams.Length = " + teams.Length + " INFO:" + sportEvent.ToString());
             }
-            EventAggregatorContainer.Instance.AddEvent(teams[0], teams[1], sportEvent);
-            Console.WriteLine(sportEvent);
+            //EventAggregatorContainer.Instance.AddEvent(teams[0], teams[1], sportEvent);
+            var result = new RecognizedSportEvent
+            {
+                Team1 = teams[0],
+                Team2 = teams[1],
+                SportEvent = sportEvent
+            };
+
+            return result;
         }
 
         private SportEvent GetEvent(IEnumerable<IElement> allTds, string eventTitle, string eventId)

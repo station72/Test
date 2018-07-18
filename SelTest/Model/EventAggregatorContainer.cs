@@ -7,6 +7,7 @@ namespace SelTest.Model
     class EventAggregatorContainer
     {
         private static EventAggregatorContainer _instance;
+        private static object _lockAddEvent = new object();
 
         //TODO: add lock
         internal static EventAggregatorContainer Instance
@@ -15,16 +16,21 @@ namespace SelTest.Model
             {
                 if (_instance == null)
                 {
-                    _instance = new EventAggregatorContainer();
+                    lock (_lockAddEvent)
+                    {
+                        if (_instance == null)
+                        {
+                            _instance = new EventAggregatorContainer();
+                        }
+                    }
                 }
-
                 return _instance;
             }
         }
 
-        internal List<EventAggregator> EventAggregators { get; }
+        private List<EventAggregator> EventAggregators { get; }
 
-        internal EventAggregatorContainer()
+        private EventAggregatorContainer()
         {
             EventAggregators = new List<EventAggregator>();
         }
@@ -40,7 +46,7 @@ namespace SelTest.Model
             return result.FirstOrDefault();
         }
 
-        internal void AddEvent(string team1, string team2, SportEvent sportEvent)
+        private void AddEvent(string team1, string team2, SportEvent sportEvent)
         {
             var aggregator = SearchAggregator(team1, team2);
             if (aggregator != null)
@@ -62,6 +68,17 @@ namespace SelTest.Model
 
             newEventAggregator.SportEvents.Add(sportEvent);
             EventAggregators.Add(newEventAggregator);
+        }
+
+        public void AddEvents(IEnumerable<RecognizedSportEvent> events)
+        {
+            lock (_lockAddEvent)
+            {
+                foreach (var ev in events)
+                {
+                    AddEvent(ev.Team1, ev.Team2, ev.SportEvent);
+                }
+            }
         }
     }
 }
