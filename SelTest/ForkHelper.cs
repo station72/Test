@@ -43,7 +43,7 @@ namespace SelTest
 
         static Fork Win1VSwin2OrDraw(SportEvent sportEvent1, SportEvent sportEvent2)
         {
-            if (sportEvent1.Win1.HasValue && sportEvent1.Win2OrDraw.HasValue)
+            if (sportEvent1.Win1.HasValue && sportEvent2.Win2OrDraw.HasValue)
             {
                 var win1VSwin2OrDraw = 1f / sportEvent1.Win1 + 1f / sportEvent2.Win2OrDraw;
                 if (win1VSwin2OrDraw < 1)
@@ -106,7 +106,7 @@ namespace SelTest
         {
             if (sportEvent1.Win2OrDraw.HasValue && sportEvent2.Win1.HasValue)
             {
-                var win2OrDrawVSwin1 = 1f / sportEvent1.Win2OrDraw + 1f / sportEvent2.Win2;
+                var win2OrDrawVSwin1 = 1f / sportEvent1.Win2OrDraw + 1f / sportEvent2.Win1;
                 if (win2OrDrawVSwin1 < 1)
                 {
                     return new Fork
