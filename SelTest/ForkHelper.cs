@@ -8,7 +8,6 @@ namespace SelTest
     //http://gidpostavkam.com/bukmekerskaya-vilka-i-vsyo-o-nej/
     internal class ForkHelper
     {
-        //В = 1/К1 + 1/К2 + 1/К3
         //TODO: use IndexSportEvent
         public static List<Fork> GetFork(SportEvent sportEvent1, SportEvent sportEvent2)
         {
@@ -18,6 +17,7 @@ namespace SelTest
             if (sportEvent2 == null)
                 throw new ArgumentNullException(nameof(sportEvent2));
 
+            //TODO: add
             //12 vs x
             //x vs 12+
 

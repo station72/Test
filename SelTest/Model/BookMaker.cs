@@ -1,6 +1,6 @@
 ﻿namespace SelTest.Model
 {
-    enum BookMaker
+    enum Bookmaker
     {
         Fonbet = 1,
         Marathon = 2

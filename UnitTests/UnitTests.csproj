@@ -55,7 +55,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FonbetTokenizerTests.cs" />
     <Compile Include="ForkHelperTests.cs" />
+    <Compile Include="MarathonTokenizerTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

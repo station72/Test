@@ -57,6 +57,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EventNameHelper.cs" />
     <Compile Include="ForkHelper.cs" />
     <Compile Include="Model\BookMaker.cs" />
     <Compile Include="Model\EventAggregator.cs" />
@@ -64,6 +65,12 @@
     <Compile Include="Helpers\FloatHelper.cs" />
     <Compile Include="Model\IndexSportEvent.cs" />
     <Compile Include="Model\RecognizedSportEvent.cs" />
+    <Compile Include="Tokenizers\FonbetTokenizer.cs" />
+    <Compile Include="Tokenizers\ITokenizer.cs" />
+    <Compile Include="Tokenizers\MarathonTokenizer.cs" />
+    <Compile Include="Tokenizers\Model\TokenizedTeam.cs" />
+    <Compile Include="Tokenizers\Model\TokenResult.cs" />
+    <Compile Include="Tokenizers\TokenizerHelper.cs" />
     <Compile Include="Workers\FonBetWorker.cs" />
     <Compile Include="Model\Fork.cs" />
     <Compile Include="Program.cs" />

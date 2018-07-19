@@ -5,7 +5,7 @@ namespace SelTest.Model
     //добавить неактивность коэффициентов
     class SportEvent
     {
-        public BookMaker BookMaker { get; set; }
+        public Bookmaker BookMaker { get; set; }
 
         public string Id { get; set; }
 
