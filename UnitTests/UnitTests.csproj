@@ -55,6 +55,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EventAggregatorContainerTests.cs" />
+    <Compile Include="EventNameHelperTests.cs" />
     <Compile Include="FonbetTokenizerTests.cs" />
     <Compile Include="ForkHelperTests.cs" />
     <Compile Include="MarathonTokenizerTest.cs" />

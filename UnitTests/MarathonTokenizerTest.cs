@@ -9,14 +9,17 @@ namespace UnitTests
         public void Tokenize_Under()
         {
             var tokenizer = new MarathonTokenizer();
-            var tokens = tokenizer.Tokenize("Калуга до 17 - Ротор до 17");
-            Assert.Equal(2, tokens.Count);
+            var teams = tokenizer.Tokenize("Селангор Юнайтед до 21 - Селангор-Волгоград до 19");
+            Assert.Equal(2, teams.Count);
 
-            Assert.Equal("Калуга", tokens[0].Title);
-            Assert.Equal(TokenizerHelper.GetUnderDescription("17"), tokens[0].Description);
+            Assert.Equal("Селангор", teams[0].Title);
+            Assert.Equal(2, teams[0].Tokens.Count);
+            Assert.Contains(TokenizerHelper.GetUnderToken("21"), teams[0].Tokens);
+            Assert.Contains(TokenizerHelper.GetUnitedToken(), teams[0].Tokens);
 
-            Assert.Equal("Ротор", tokens[1].Title);
-            Assert.Equal(TokenizerHelper.GetUnderDescription("17"), tokens[1].Description);
+            Assert.Equal("Селангор-Волгоград", teams[1].Title);
+            Assert.Single(teams[1].Tokens);
+            Assert.Contains(TokenizerHelper.GetUnderToken("19"), teams[1].Tokens);
         }
     }
 }

@@ -4,6 +4,6 @@
     {
         public string Token { get; set; }
 
-        public string OtherText { get; set; }
+        public string RemainingTitle { get; set; }
     }
 }

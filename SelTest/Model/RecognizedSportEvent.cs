@@ -1,10 +1,12 @@
-﻿namespace SelTest.Model
+﻿using SelTest.Tokenizers.Model;
+
+namespace SelTest.Model
 {
     class RecognizedSportEvent
     {
-        public string Team1 { get; set; }
+        public TokenizedTeam Team1 { get; set; }
 
-        public string Team2 { get; set; }
+        public TokenizedTeam Team2 { get; set; }
 
         public SportEvent SportEvent { get; set; }
     }

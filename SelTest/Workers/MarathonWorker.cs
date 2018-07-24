@@ -13,6 +13,8 @@ using System.Threading.Tasks;
 
 namespace SelTest.Workers
 {
+    //indices
+    //Array.prototype.map.call(document.querySelectorAll('tbody[data-event-treeid]'), function(el){ return el.attributes['data-event-treeid'].value}).sort()
     internal class MarathonWorker
     {
         private IWebDriver _browser;
@@ -74,7 +76,7 @@ namespace SelTest.Workers
             }
         }
 
-        private IEnumerable<RecognizedSportEvent> GetEvents()
+        private IEnumerable<SportEvent> GetEvents()
         {
             var content = _browser.FindElement(By.CssSelector(".sport-category-content"));
             var contentHTML = content.GetAttribute("innerHTML");
@@ -83,7 +85,7 @@ namespace SelTest.Workers
             var document = parser.Parse(contentHTML);
 
             var categoryContainers = document.QuerySelectorAll(".category-container");
-            var recEvents = new List<RecognizedSportEvent>();
+            var recEvents = new List<SportEvent>();
             foreach (var categoryContainer in categoryContainers)
             {
                 _cts.Token.ThrowIfCancellationRequested();
@@ -104,7 +106,7 @@ namespace SelTest.Workers
             return recEvents;
         }
 
-        private RecognizedSportEvent GetEvent(IElement tBodyContent)
+        private SportEvent GetEvent(IElement tBodyContent)
         {
             var eventTitle = tBodyContent.GetAttribute("data-event-name");
             var eventId = tBodyContent.GetAttribute("data-event-treeid");
@@ -113,28 +115,15 @@ namespace SelTest.Workers
             var tds = tr.Children.ToArray();
 
             var sportEvent = GetEvent(tds, eventTitle, eventId);
-
-            var teams = sportEvent.Title.Split(new string[] { " - " }, StringSplitOptions.RemoveEmptyEntries);
-            if (teams.Length != 2)
-            {
-                throw new Exception("teams.Length = " + teams.Length + " INFO:" + sportEvent.ToString());
-            }
-            //EventAggregatorContainer.Instance.AddEvent(teams[0], teams[1], sportEvent);
-            var result = new RecognizedSportEvent
-            {
-                Team1 = teams[0],
-                Team2 = teams[1],
-                SportEvent = sportEvent
-            };
-
-            return result;
+                        
+            return sportEvent;
         }
 
         private SportEvent GetEvent(IEnumerable<IElement> allTds, string eventTitle, string eventId)
         {
             var sportEvent = new SportEvent()
             {
-                Title = eventTitle,
+                TitleOrigin = eventTitle,
                 Id = eventId
             };
 

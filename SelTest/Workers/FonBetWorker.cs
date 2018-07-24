@@ -13,6 +13,8 @@ using System.Threading.Tasks;
 
 namespace SelTest.Workers
 {
+    //indices
+    //Array.prototype.map.call(document.querySelectorAll('span.table__event-number'), function(el) {return el.innerText}).sort()
     class FonBetWorker
     {
         private IWebDriver _browser;
@@ -78,7 +80,7 @@ namespace SelTest.Workers
             }
         }
 
-        private IEnumerable<RecognizedSportEvent> GetEvents()
+        private IEnumerable<SportEvent> GetEvents()
         {
             Console.WriteLine("Iteration START");
 
@@ -86,7 +88,7 @@ namespace SelTest.Workers
             var tableHtml = "<table class=\"table\">" + table.GetAttribute("innerHTML") + "</table>";
 
             var parser = new HtmlParser();
-            var recSportEvents = new List<RecognizedSportEvent>();
+            var sportEvents = new List<SportEvent>();
             using (var document = parser.Parse(tableHtml))
             {
                 var tBodys = document.QuerySelectorAll("table.table>tbody.table__body");
@@ -107,18 +109,8 @@ namespace SelTest.Workers
 
                         var tds = row.Children;
                         var sportEvent = EventGetter(tds);
-                        var teams = sportEvent.Title.Split(new string[] { " — " }, StringSplitOptions.RemoveEmptyEntries);
-                        if (teams.Length != 2)
-                        {
-                            throw new Exception("team.Length = " + teams.Length);
-                        }
 
-                        recSportEvents.Add(new RecognizedSportEvent
-                        {
-                            Team1 = teams[0],
-                            Team2 = teams[1],
-                            SportEvent = sportEvent
-                        });
+                        sportEvents.Add(sportEvent);
 
                         _cts.Token.ThrowIfCancellationRequested();
                         Console.WriteLine(sportEvent);
@@ -127,7 +119,7 @@ namespace SelTest.Workers
                 Console.WriteLine("Iteration END");
             }
 
-            return recSportEvents;
+            return sportEvents;
         }
 
         float? GetValue(IEnumerable<IElement> tds, int skip)
@@ -149,7 +141,7 @@ namespace SelTest.Workers
             {
                 Console.WriteLine("Title element is null");
             }
-            result.Title = titleEl?.TextContent;
+            result.TitleOrigin = titleEl?.TextContent;
 
             result.Win1 = GetValue(tds, 2);
             result.Draw = GetValue(tds, 3);

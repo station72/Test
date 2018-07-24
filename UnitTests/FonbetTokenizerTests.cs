@@ -5,20 +5,21 @@ namespace UnitTests
 {
     public class FonbetTokenizerTests
     {
-        //Калуга U17 — Ротор - Волгоград U17
-        //Калуга до 17 - Ротор до 17       MARATHON
         [Fact]
-        public void Tokenize_Under()
+        public void Tokenize_Multiple()
         {
             var tokenizer = new FonbetTokenizer();
-            var tokenizedTeams = tokenizer.Tokenize("Калуга U17 — Ротор - Волгоград U17");
-            Assert.Equal(2, tokenizedTeams.Count);
+            var teams = tokenizer.Tokenize("Селангор Юн U21 — Селангор - Волгоград U19");
+            Assert.Equal(2, teams.Count);
 
-            Assert.Equal("Калуга", tokenizedTeams[0].Title);
-            Assert.Equal(TokenizerHelper.GetUnderDescription("17"), tokenizedTeams[0].Description);
-
-            Assert.Equal("Ротор - Волгоград", tokenizedTeams[1].Title);
-            Assert.Equal(TokenizerHelper.GetUnderDescription("17") , tokenizedTeams[1].Description);
+            Assert.Equal("Селангор", teams[0].Title);
+            Assert.Equal(2, teams[0].Tokens.Count);
+            Assert.Contains(TokenizerHelper.GetUnderToken("21"), teams[0].Tokens);
+            Assert.Contains(TokenizerHelper.GetUnitedToken() , teams[0].Tokens);
+            
+            Assert.Equal("Селангор - Волгоград", teams[1].Title);
+            Assert.Single(teams[1].Tokens);
+            Assert.Contains(TokenizerHelper.GetUnderToken("19"), teams[1].Tokens);
         }
     }
 }

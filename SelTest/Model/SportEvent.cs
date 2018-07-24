@@ -5,11 +5,11 @@ namespace SelTest.Model
     //добавить неактивность коэффициентов
     class SportEvent
     {
-        public Bookmaker BookMaker { get; set; }
+        public Bookmaker Bookmaker { get; set; }
 
         public string Id { get; set; }
 
-        public string Title { get; set; }
+        public string TitleOrigin { get; set; }
 
         public float? Win1 { get; set; }
 
@@ -41,7 +41,7 @@ namespace SelTest.Model
 
         public override string ToString()
         {
-            return $"{Title} {Environment.NewLine} {Win1} {Draw} {Win2} {Win1OrDraw} {Win1OrWin2} {Win2OrDraw} {ForaText1} {ForaTeam1} {ForaText2} {ForaTeam2} {TotalMoreText} {TotalMore} {TotalLess}";
+            return $"{TitleOrigin} {Environment.NewLine} {Win1} {Draw} {Win2} {Win1OrDraw} {Win1OrWin2} {Win2OrDraw} {ForaText1} {ForaTeam1} {ForaText2} {ForaTeam2} {TotalMoreText} {TotalMore} {TotalLess}";
         }
     }
 }

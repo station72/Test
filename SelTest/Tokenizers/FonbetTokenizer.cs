@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace SelTest.Tokenizers
 {
-    class FonbetTokenizer
+    class FonbetTokenizer : ITokenizer
     {
         public List<TokenizedTeam> Tokenize(string rawEventTitle)
         {
@@ -19,6 +19,7 @@ namespace SelTest.Tokenizers
             foreach (var teamName in teams)
             {
                 var tokenizedTeam = TokenizeTeam(teamName);
+                tokenizedTeam.RawTeamTitle = teamName;
                 result.Add(tokenizedTeam);
             }
 
@@ -27,25 +28,28 @@ namespace SelTest.Tokenizers
 
         private TokenizedTeam TokenizeTeam(string teamName)
         {
-            var description = string.Empty;
-            var title = teamName;
+            var tokenizedTeam = new TokenizedTeam();
 
             var underToken = GetUnderToken(teamName);
-            if (!string.IsNullOrWhiteSpace(underToken.Token))
+            if (underToken.Token != null)
             {
-                description += TokenizerHelper.GetUnderDescription(underToken.Token);
-                title = underToken.OtherText;
+                tokenizedTeam.Tokens.Add(underToken.Token);
+                teamName = underToken.RemainingTitle;
             }
 
-            var result = new TokenizedTeam
+            var unitedToken = GetUnitedToken(teamName);
+            if (unitedToken.Token != null)
             {
-                Description = description,
-                Title = title
-            };
+                tokenizedTeam.Tokens.Add(unitedToken.Token);
+                teamName = unitedToken.RemainingTitle;
+            }
 
-            return result;
+            tokenizedTeam.Title = teamName;
+
+            return tokenizedTeam;
         }
 
+        //TokenResult rename to Tokenization Result
         private TokenResult GetUnderToken(string teamName)
         {
             var result = new TokenResult();
@@ -60,13 +64,34 @@ namespace SelTest.Tokenizers
             {
                 var match = matches[0];
                 var underMatchYears = match.Value.Substring(1);
-                result.Token = underMatchYears;
-                result.OtherText = regex.Replace(teamName, string.Empty).Trim();
+                result.Token = TokenizerHelper.GetUnderToken(underMatchYears);
+                result.RemainingTitle = regex.Replace(teamName, string.Empty).Trim();
             }
             else
             {
-                result.OtherText = teamName;
+                result.RemainingTitle = teamName;
             }
+
+            return result;
+        }
+
+        private TokenResult GetUnitedToken(string teamName)
+        {
+            var inTheMid = " Юн ";
+            var inTheEnd = " Юн";
+
+            if (!(teamName.Contains(inTheMid) || teamName.EndsWith(inTheEnd)))
+                return new TokenResult
+                {
+                    Token = null,
+                    RemainingTitle = teamName
+                };
+
+            var result = new TokenResult();
+            result.Token = TokenizerHelper.GetUnitedToken();
+            result.RemainingTitle = teamName.Replace(inTheMid, string.Empty)
+                                       .Replace(inTheEnd, string.Empty)
+                                       .Trim();
 
             return result;
         }
